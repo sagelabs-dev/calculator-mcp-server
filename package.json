@@ -1,0 +1,71 @@
+{
+  "name": "@guan-tends/calculator-mcp-server",
+  "version": "0.1.0",
+  "description": "Scientific calculator MCP tool server - safe expression evaluation, symbolic calculus (derivative, simplify, solve, integral), statistics, and matrix operations, via the Model Context Protocol.",
+  "type": "module",
+  "main": "src/mcp-server.js",
+  "exports": {
+    ".": "./src/mcp-server.js",
+    "./server": "./src/mcp-server.js",
+    "./mcp-server.js": "./src/mcp-server.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "calculator-mcp-server": "./bin/calculator-mcp-server.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ __tests__/ bin/",
+    "lint:fix": "eslint src/ __tests__/ bin/ --fix",
+    "format": "prettier --write src/ __tests__/ bin/",
+    "format:check": "prettier --check src/ __tests__/ bin/",
+    "prepublishOnly": "npm run lint && npm test"
+  },
+  "keywords": [
+    "calculator",
+    "math",
+    "mathjs",
+    "scientific",
+    "symbolic",
+    "cas",
+    "statistics",
+    "matrix",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "agent",
+    "tools"
+  ],
+  "files": [
+    "src/",
+    "bin/",
+    "config.example.json5",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "dependencies": {
+    "@guan-tends/mcp-ai": "^1.6.7-guan.0",
+    "mathjs": "^15.2.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "vitest": "4.1.11",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "prettier": "^3.0.0"
+  },
+  "author": "Guan (guan-tends)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guan-tends/calculator-mcp-server.git"
+  }
+}
