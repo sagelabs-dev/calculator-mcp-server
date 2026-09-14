@@ -23,9 +23,6 @@
 
 import { parseAndAudit, getSandboxMath, requireBoundSymbols } from './evaluate.js'
 
-/** Max degree the sampling extractor attempts (quartic → 5 coefficients). */
-const MAX_EXTRACTION_DEGREE = 4
-
 /** Max denominators for exact fraction formatting of coefficients. */
 const FRACTION_DENOMINATOR_CAP = 1000
 
