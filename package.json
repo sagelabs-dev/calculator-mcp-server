@@ -52,15 +52,16 @@
   ],
   "dependencies": {
     "@guan-tends/mcp-ai": "^1.6.7-guan.0",
+    "json5": "^2.2.3",
     "mathjs": "^15.2.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.11.0",
-    "vitest": "4.1.11",
-    "eslint": "^9.0.0",
     "@eslint/js": "^9.0.0",
-    "prettier": "^3.0.0"
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "vitest": "4.1.11"
   },
   "author": "Guan (guan-tends)",
   "license": "MIT",
