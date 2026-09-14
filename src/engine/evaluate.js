@@ -165,6 +165,30 @@ function sanitizeScope(scope) {
  *   scope violations, or length violations — all failures close.
  */
 export function evaluateExpression(expression, scope) {
+  const { math, cleanScope } = parseAndAudit(expression, scope)
+  const rawEvaluate = getRawEvaluate(math)
+  const value =
+    cleanScope === undefined
+      ? rawEvaluate.call(math, expression)
+      : rawEvaluate.call(math, expression, cleanScope)
+
+  return classifyValue(math, value)
+}
+
+/**
+ * Parse an expression and enforce the full security policy WITHOUT
+ * evaluating. Shared entry point for every AST-consuming engine operation
+ * (evaluate, derivative, simplify, solve, integrate) so the sandbox rules
+ * are defined exactly once.
+ *
+ * @param {string} expression - Raw untrusted expression string.
+ * @param {object} [scope] - Optional user variables.
+ * @returns {{math: object, node: object, cleanScope: object|undefined}}
+ *   The sandboxed instance, parsed AST, and sanitized scope.
+ * @throws {Error} On type/empty/length violations, scope violations, or
+ *   any security-policy violation (forbidden node types, unknown symbols).
+ */
+export function parseAndAudit(expression, scope, { allowFreeSymbols = false } = {}) {
   if (typeof expression !== 'string') {
     throw new Error('expression must be a string')
   }
@@ -184,17 +208,16 @@ export function evaluateExpression(expression, scope) {
   const node = math.parse(expression)
 
   // Security policy: node types + symbol allowlist (see module docs).
-  for (const violation of auditAst(math, node, cleanScope)) {
+  // Numeric evaluation requires every symbol to be namespace/scope-bound;
+  // symbolic operations (derivative, simplify, solve, integral) allow
+  // free variables — the security properties (no host objects, no
+  // prototype gadgets, no assignments) hold either way, because gadgets
+  // like `constructor` are never OWN namespace members.
+  for (const violation of auditAst(math, node, cleanScope, allowFreeSymbols)) {
     throw new Error(violation)
   }
 
-  const rawEvaluate = getRawEvaluate(math)
-  const value =
-    cleanScope === undefined
-      ? rawEvaluate.call(math, expression)
-      : rawEvaluate.call(math, expression, cleanScope)
-
-  return classifyValue(math, value)
+  return { math, node, cleanScope }
 }
 
 /** Node types rejected as policy regardless of content. */
@@ -209,7 +232,7 @@ const FORBIDDEN_NODE_TYPES = new Set(['AssignmentNode', 'FunctionAssignmentNode'
  * @returns {string[]} Human-readable violations; empty when clean.
  * @private
  */
-function auditAst(math, root, scope) {
+function auditAst(math, root, scope, allowFreeSymbols) {
   const violations = []
   root.traverse((node) => {
     if (violations.length > 0) return // report first violation only
@@ -221,7 +244,7 @@ function auditAst(math, root, scope) {
       const name = node.name
       const inNamespace = Object.hasOwn(math, name)
       const inScope = scope !== undefined && Object.hasOwn(scope, name)
-      if (!inNamespace && !inScope) {
+      if (!inNamespace && !inScope && !allowFreeSymbols) {
         violations.push(
           `symbol '${name}' is not a known function, constant, or scope variable`,
         )
