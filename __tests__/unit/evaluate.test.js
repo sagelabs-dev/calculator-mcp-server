@@ -132,6 +132,16 @@ describe('security — JS escape vectors must fail closed', () => {
     expect(() => evaluateExpression('createUnit("x")')).toThrow()
   })
 
+  it('rejects assignments by policy (AST node type)', () => {
+    expect(() => evaluateExpression('x = 3')).toThrow(/assignments are not permitted/)
+    expect(() => evaluateExpression('f(t) = t^2')).toThrow(/assignments are not permitted/)
+  })
+
+  it('gives symbol-level errors for host globals (allowlist, not runtime)', () => {
+    expect(() => evaluateExpression('eval')).toThrow(/symbol 'eval' is not a known/)
+    expect(() => evaluateExpression('fetch')).toThrow(/symbol 'fetch' is not a known/)
+  })
+
   it('sandboxed instance has no working import even after reuse', () => {
     const math = createCalculatorMath()
     // Shared sandbox contract: repeated calls cannot re-enable escapes.
