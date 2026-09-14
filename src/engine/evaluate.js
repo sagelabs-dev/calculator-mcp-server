@@ -220,6 +220,36 @@ export function parseAndAudit(expression, scope, { allowFreeSymbols = false } = 
   return { math, node, cleanScope }
 }
 
+/**
+ * Require every symbol in the AST to be bound: a namespace member, a scope
+ * variable, or the operation variable itself. Shared by solve and integral
+ * — coefficient extraction/evaluation is impossible with unbound symbols,
+ * so callers get one precise error naming every offender.
+ *
+ * @param {object} math - Sandboxed instance.
+ * @param {object} node - AST to walk.
+ * @param {object|undefined} scope - Sanitized scope.
+ * @param {string} variable - The operation variable (allowed free symbol).
+ * @throws {Error} On any unbound non-variable symbol.
+ */
+export function requireBoundSymbols(math, node, scope, variable) {
+  const unbound = new Set()
+  node.traverse((n) => {
+    if (!n.isSymbolNode) return
+    const name = n.name
+    if (name === variable) return
+    if (Object.hasOwn(math, name)) return
+    if (scope && Object.hasOwn(scope, name)) return
+    unbound.add(name)
+  })
+  if (unbound.size > 0) {
+    const names = [...unbound].sort().map((s) => `'${s}'`).join(', ')
+    throw new Error(
+      `coefficients must be numeric or resolvable via scope — unresolved symbol(s): ${names}`,
+    )
+  }
+}
+
 /** Node types rejected as policy regardless of content. */
 const FORBIDDEN_NODE_TYPES = new Set(['AssignmentNode', 'FunctionAssignmentNode'])
 

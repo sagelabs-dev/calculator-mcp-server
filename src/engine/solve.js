@@ -23,7 +23,7 @@
  * @module engine/solve
  */
 
-import { parseAndAudit, getSandboxMath } from './evaluate.js'
+import { parseAndAudit, getSandboxMath, requireBoundSymbols } from './evaluate.js'
 
 /** Numeric scan window: roots are searched in [-WINDOW, WINDOW]. */
 const NUMERIC_WINDOW = 100
@@ -67,36 +67,6 @@ function evalAstAt(math, fNode, variable, scope, x) {
   const localScope = { ...(scope ?? {}) }
   localScope[variable] = x
   return fNode.evaluate(localScope)
-}
-
-/**
- * Check every symbol in the AST is bound: a namespace member, a scope
- * variable, or the solve variable itself. Unbound symbols would make
- * coefficient evaluation impossible — the caller gets a precise error.
- *
- * @param {object} math - Sandboxed instance.
- * @param {object} node - AST to walk.
- * @param {object|undefined} scope - Sanitized scope.
- * @param {string} variable - The solve variable (allowed free symbol).
- * @throws {Error} On any unbound non-variable symbol.
- * @private
- */
-function requireBoundSymbols(math, node, scope, variable) {
-  const unbound = new Set()
-  node.traverse((n) => {
-    if (!n.isSymbolNode) return
-    const name = n.name
-    if (name === variable) return
-    if (Object.hasOwn(math, name)) return
-    if (scope && Object.hasOwn(scope, name)) return
-    unbound.add(name)
-  })
-  if (unbound.size > 0) {
-    const names = [...unbound].sort().map((s) => `'${s}'`).join(', ')
-    throw new Error(
-      `coefficients must be numeric or resolvable via scope — unresolved symbol(s): ${names}`,
-    )
-  }
 }
 
 /**
