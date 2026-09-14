@@ -254,6 +254,31 @@ export function requireBoundSymbols(math, node, scope, variable) {
 const FORBIDDEN_NODE_TYPES = new Set(['AssignmentNode', 'FunctionAssignmentNode'])
 
 /**
+ * Host-environment symbols rejected in EVERY mode, including symbolic
+ * mode (allowFreeSymbols). Free MATH variables are fine — 'foo', 't',
+ * 'k' — but a free symbol colliding with a JS host global would flow
+ * through symbolic transforms (derivative/simplify never evaluate it,
+ * but the name would ride along in returned strings and could later be
+ * fed back into numeric evaluation contexts). Defense in depth: the
+ * namespace-allowlist guards numeric mode; this blocklist guards both.
+ */
+const HOST_SYMBOL_BLOCKLIST = new Set([
+  'process',
+  'globalThis',
+  'global',
+  'constructor',
+  'eval',
+  'Function',
+  'require',
+  'module',
+  'exports',
+  'window',
+  'document',
+  'Buffer',
+  'fetch',
+])
+
+/**
  * Audit a parsed AST against the security policy.
  *
  * @param {object} math - Sandboxed instance (namespace membership source).
@@ -274,7 +299,9 @@ function auditAst(math, root, scope, allowFreeSymbols) {
       const name = node.name
       const inNamespace = Object.hasOwn(math, name)
       const inScope = scope !== undefined && Object.hasOwn(scope, name)
-      if (!inNamespace && !inScope && !allowFreeSymbols) {
+      if (HOST_SYMBOL_BLOCKLIST.has(name)) {
+        violations.push(`symbol '${name}' is not permitted in calculator expressions`)
+      } else if (!inNamespace && !inScope && !allowFreeSymbols) {
         violations.push(
           `symbol '${name}' is not a known function, constant, or scope variable`,
         )

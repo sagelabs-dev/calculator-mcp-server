@@ -138,8 +138,8 @@ describe('security — JS escape vectors must fail closed', () => {
   })
 
   it('gives symbol-level errors for host globals (allowlist, not runtime)', () => {
-    expect(() => evaluateExpression('eval')).toThrow(/symbol 'eval' is not a known/)
-    expect(() => evaluateExpression('fetch')).toThrow(/symbol 'fetch' is not a known/)
+    expect(() => evaluateExpression('eval')).toThrow(/symbol 'eval' is not permitted/)
+    expect(() => evaluateExpression('fetch')).toThrow(/symbol 'fetch' is not permitted/)
   })
 
   it('sandboxed instance has no working import even after reuse', () => {

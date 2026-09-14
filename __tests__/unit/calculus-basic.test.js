@@ -53,8 +53,8 @@ describe('symbolicDerivative', () => {
   })
 
   it('still blocks host globals in symbolic mode', () => {
-    expect(() => symbolicDerivative('process + x', 'x')).toThrow(/symbol 'process' is not a known/)
-    expect(() => symbolicSimplify('globalThis')).toThrow(/symbol 'globalThis' is not a known/)
+    expect(() => symbolicDerivative('process + x', 'x')).toThrow(/symbol 'process' is not permitted/)
+    expect(() => symbolicSimplify('globalThis')).toThrow(/symbol 'globalThis' is not permitted/)
   })
 
   it('throws on assignments', () => {
