@@ -11,9 +11,9 @@
  * @module bin/calculator-mcp-server
  */
 
-import { runMain } from '../src/index.js'
+import { runMain } from "../src/index.js";
 
-runMain({ transportDefault: 'stdio' }).catch((error) => {
-  console.error('[CalcMCP] Fatal error:', error)
-  process.exit(1)
-})
+runMain({ transportDefault: "stdio" }).catch((error) => {
+  console.error("[CalcMCP] Fatal error:", error);
+  process.exit(1);
+});

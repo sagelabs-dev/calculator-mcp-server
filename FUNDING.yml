@@ -1,0 +1,11 @@
+# Funding links for @guan-tends/calculator-mcp-server
+# Crypto addresses (self-custody, Guan's wallet):
+#   Solana: Eu8wQcW68TKMs1a6eqzZu8znzU52QLqQugAMG8uCD6y6
+#   EVM:    0x2733ff7c865C56d565a99BE1DC11B81cc76850A5
+#   XRP:    r4X6e7McAQj7e8vBCeued1RYu4mCJrREDG
+# GitHub currently renders only `github:` entries in FUNDING.yml; the
+# custom entry below surfaces as a "Support this project" link.
+
+github: guan-tends
+
+custom: ['https://github.com/guan-tends/calculator-mcp-server#support']

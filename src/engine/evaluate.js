@@ -44,13 +44,13 @@
  * @module engine/evaluate
  */
 
-import { create, all } from 'mathjs'
+import { create, all } from "mathjs";
 
 /** Maximum accepted expression length (characters). */
-export const MAX_EXPRESSION_LENGTH = 2000
+export const MAX_EXPRESSION_LENGTH = 2000;
 
 /** Functions replaced with throwing stubs in the sandbox. */
-const DISABLED_FUNCTIONS = ['import', 'evaluate', 'createUnit']
+const DISABLED_FUNCTIONS = ["import", "evaluate", "createUnit"];
 
 /**
  * Raw evaluators captured before stubbing, keyed by instance (WeakMap =
@@ -62,7 +62,7 @@ const DISABLED_FUNCTIONS = ['import', 'evaluate', 'createUnit']
  * `evaluate("...")` resolve the STUB and fail closed, while engine code
  * drives evaluations through the captured original.
  */
-const rawEvaluateByInstance = new WeakMap()
+const rawEvaluateByInstance = new WeakMap();
 
 /**
  * Create a fresh sandboxed mathjs instance.
@@ -79,16 +79,16 @@ const rawEvaluateByInstance = new WeakMap()
  * @returns {object} Sandboxed mathjs instance.
  */
 export function createCalculatorMath() {
-  const math = create(all, {})
-  rawEvaluateByInstance.set(math, math.evaluate)
-  const stubs = {}
+  const math = create(all, {});
+  rawEvaluateByInstance.set(math, math.evaluate);
+  const stubs = {};
   for (const name of DISABLED_FUNCTIONS) {
     stubs[name] = () => {
-      throw new Error(`'${name}()' is disabled in the calculator sandbox`)
-    }
+      throw new Error(`'${name}()' is disabled in the calculator sandbox`);
+    };
   }
-  math.import(stubs, { override: true })
-  return math
+  math.import(stubs, { override: true });
+  return math;
 }
 
 /**
@@ -99,13 +99,14 @@ export function createCalculatorMath() {
  * @private
  */
 function getRawEvaluate(math) {
-  const fn = rawEvaluateByInstance.get(math)
-  if (!fn) throw new Error('math instance was not created by createCalculatorMath')
-  return fn
+  const fn = rawEvaluateByInstance.get(math);
+  if (!fn)
+    throw new Error("math instance was not created by createCalculatorMath");
+  return fn;
 }
 
 /** Shared sandboxed instance for all engine modules. */
-let sharedSandbox = null
+let sharedSandbox = null;
 
 /**
  * Get the shared sandboxed mathjs instance (lazily created).
@@ -113,8 +114,8 @@ let sharedSandbox = null
  * @returns {object} The shared sandboxed mathjs instance.
  */
 export function getSandboxMath() {
-  if (!sharedSandbox) sharedSandbox = createCalculatorMath()
-  return sharedSandbox
+  if (!sharedSandbox) sharedSandbox = createCalculatorMath();
+  return sharedSandbox;
 }
 
 /**
@@ -129,26 +130,28 @@ export function getSandboxMath() {
  *   values, or malformed keys.
  */
 function sanitizeScope(scope) {
-  if (scope === undefined || scope === null) return undefined
-  if (typeof scope !== 'object' || Array.isArray(scope)) {
-    throw new Error('scope must be an object mapping variable names to finite numbers')
+  if (scope === undefined || scope === null) return undefined;
+  if (typeof scope !== "object" || Array.isArray(scope)) {
+    throw new Error(
+      "scope must be an object mapping variable names to finite numbers",
+    );
   }
   // Plain object (NOT null-prototype): mathjs typed-function dispatch
   // introspects scope internals and crashes on null-prototype maps.
   // Prototype-gadget defense is the AST allowlist's job (see module docs).
-  const clean = {}
+  const clean = {};
   for (const [key, value] of Object.entries(scope)) {
     if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(key)) {
-      throw new Error(`scope key '${key}' is not a valid variable name`)
+      throw new Error(`scope key '${key}' is not a valid variable name`);
     }
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
       throw new Error(
         `scope value for '${key}' must be a finite number (got ${typeof value})`,
-      )
+      );
     }
-    clean[key] = value
+    clean[key] = value;
   }
-  return clean
+  return clean;
 }
 
 /**
@@ -165,14 +168,14 @@ function sanitizeScope(scope) {
  *   scope violations, or length violations — all failures close.
  */
 export function evaluateExpression(expression, scope) {
-  const { math, cleanScope } = parseAndAudit(expression, scope)
-  const rawEvaluate = getRawEvaluate(math)
+  const { math, cleanScope } = parseAndAudit(expression, scope);
+  const rawEvaluate = getRawEvaluate(math);
   const value =
     cleanScope === undefined
       ? rawEvaluate.call(math, expression)
-      : rawEvaluate.call(math, expression, cleanScope)
+      : rawEvaluate.call(math, expression, cleanScope);
 
-  return classifyValue(math, value)
+  return classifyValue(math, value);
 }
 
 /**
@@ -188,24 +191,28 @@ export function evaluateExpression(expression, scope) {
  * @throws {Error} On type/empty/length violations, scope violations, or
  *   any security-policy violation (forbidden node types, unknown symbols).
  */
-export function parseAndAudit(expression, scope, { allowFreeSymbols = false } = {}) {
-  if (typeof expression !== 'string') {
-    throw new Error('expression must be a string')
+export function parseAndAudit(
+  expression,
+  scope,
+  { allowFreeSymbols = false } = {},
+) {
+  if (typeof expression !== "string") {
+    throw new Error("expression must be a string");
   }
-  if (expression.trim() === '') {
-    throw new Error('expression is empty')
+  if (expression.trim() === "") {
+    throw new Error("expression is empty");
   }
   if (expression.length > MAX_EXPRESSION_LENGTH) {
     throw new Error(
       `expression exceeds maximum length of ${MAX_EXPRESSION_LENGTH} characters`,
-    )
+    );
   }
 
-  const math = getSandboxMath()
-  const cleanScope = sanitizeScope(scope)
+  const math = getSandboxMath();
+  const cleanScope = sanitizeScope(scope);
 
   // Parse WITHOUT executing — parse only builds the AST.
-  const node = math.parse(expression)
+  const node = math.parse(expression);
 
   // Security policy: node types + symbol allowlist (see module docs).
   // Numeric evaluation requires every symbol to be namespace/scope-bound;
@@ -214,10 +221,10 @@ export function parseAndAudit(expression, scope, { allowFreeSymbols = false } = 
   // prototype gadgets, no assignments) hold either way, because gadgets
   // like `constructor` are never OWN namespace members.
   for (const violation of auditAst(math, node, cleanScope, allowFreeSymbols)) {
-    throw new Error(violation)
+    throw new Error(violation);
   }
 
-  return { math, node, cleanScope }
+  return { math, node, cleanScope };
 }
 
 /**
@@ -233,25 +240,31 @@ export function parseAndAudit(expression, scope, { allowFreeSymbols = false } = 
  * @throws {Error} On any unbound non-variable symbol.
  */
 export function requireBoundSymbols(math, node, scope, variable) {
-  const unbound = new Set()
+  const unbound = new Set();
   node.traverse((n) => {
-    if (!n.isSymbolNode) return
-    const name = n.name
-    if (name === variable) return
-    if (Object.hasOwn(math, name)) return
-    if (scope && Object.hasOwn(scope, name)) return
-    unbound.add(name)
-  })
+    if (!n.isSymbolNode) return;
+    const name = n.name;
+    if (name === variable) return;
+    if (Object.hasOwn(math, name)) return;
+    if (scope && Object.hasOwn(scope, name)) return;
+    unbound.add(name);
+  });
   if (unbound.size > 0) {
-    const names = [...unbound].sort().map((s) => `'${s}'`).join(', ')
+    const names = [...unbound]
+      .sort()
+      .map((s) => `'${s}'`)
+      .join(", ");
     throw new Error(
       `coefficients must be numeric or resolvable via scope — unresolved symbol(s): ${names}`,
-    )
+    );
   }
 }
 
 /** Node types rejected as policy regardless of content. */
-const FORBIDDEN_NODE_TYPES = new Set(['AssignmentNode', 'FunctionAssignmentNode'])
+const FORBIDDEN_NODE_TYPES = new Set([
+  "AssignmentNode",
+  "FunctionAssignmentNode",
+]);
 
 /**
  * Host-environment symbols rejected in EVERY mode, including symbolic
@@ -263,20 +276,20 @@ const FORBIDDEN_NODE_TYPES = new Set(['AssignmentNode', 'FunctionAssignmentNode'
  * namespace-allowlist guards numeric mode; this blocklist guards both.
  */
 const HOST_SYMBOL_BLOCKLIST = new Set([
-  'process',
-  'globalThis',
-  'global',
-  'constructor',
-  'eval',
-  'Function',
-  'require',
-  'module',
-  'exports',
-  'window',
-  'document',
-  'Buffer',
-  'fetch',
-])
+  "process",
+  "globalThis",
+  "global",
+  "constructor",
+  "eval",
+  "Function",
+  "require",
+  "module",
+  "exports",
+  "window",
+  "document",
+  "Buffer",
+  "fetch",
+]);
 
 /**
  * Audit a parsed AST against the security policy.
@@ -288,27 +301,31 @@ const HOST_SYMBOL_BLOCKLIST = new Set([
  * @private
  */
 function auditAst(math, root, scope, allowFreeSymbols) {
-  const violations = []
+  const violations = [];
   root.traverse((node) => {
-    if (violations.length > 0) return // report first violation only
+    if (violations.length > 0) return; // report first violation only
     if (FORBIDDEN_NODE_TYPES.has(node.type)) {
-      violations.push(`assignments are not permitted in calculator expressions (${node.type})`)
-      return
+      violations.push(
+        `assignments are not permitted in calculator expressions (${node.type})`,
+      );
+      return;
     }
     if (node.isSymbolNode) {
-      const name = node.name
-      const inNamespace = Object.hasOwn(math, name)
-      const inScope = scope !== undefined && Object.hasOwn(scope, name)
+      const name = node.name;
+      const inNamespace = Object.hasOwn(math, name);
+      const inScope = scope !== undefined && Object.hasOwn(scope, name);
       if (HOST_SYMBOL_BLOCKLIST.has(name)) {
-        violations.push(`symbol '${name}' is not permitted in calculator expressions`)
+        violations.push(
+          `symbol '${name}' is not permitted in calculator expressions`,
+        );
       } else if (!inNamespace && !inScope && !allowFreeSymbols) {
         violations.push(
           `symbol '${name}' is not a known function, constant, or scope variable`,
-        )
+        );
       }
     }
-  })
-  return violations
+  });
+  return violations;
 }
 
 /**
@@ -320,37 +337,41 @@ function auditAst(math, root, scope, allowFreeSymbols) {
  * @private
  */
 function classifyValue(math, value) {
-  const type = math.typeOf(value)
-  const formatted = math.format(value, { precision: 14 })
+  const type = math.typeOf(value);
+  const formatted = math.format(value, { precision: 14 });
 
   switch (type) {
-    case 'number':
+    case "number":
       return {
         result: formatted,
         numeric: Number.isFinite(value) ? value : null,
-        valueType: 'number',
-      }
-    case 'BigNumber':
-    case 'Fraction': {
-      const n = Number(value)
-      return { result: formatted, numeric: Number.isFinite(n) ? n : null, valueType: 'number' }
+        valueType: "number",
+      };
+    case "BigNumber":
+    case "Fraction": {
+      const n = Number(value);
+      return {
+        result: formatted,
+        numeric: Number.isFinite(n) ? n : null,
+        valueType: "number",
+      };
     }
-    case 'Complex':
-      return { result: formatted, numeric: null, valueType: 'complex' }
-    case 'Unit':
-      return { result: formatted, numeric: null, valueType: 'unit' }
-    case 'Matrix':
-    case 'Array':
-    case 'DenseMatrix':
-      return { result: formatted, numeric: null, valueType: 'matrix' }
-    case 'boolean':
-      return { result: formatted, numeric: null, valueType: 'boolean' }
-    case 'string':
-      return { result: formatted, numeric: null, valueType: 'string' }
-    case 'null':
-    case 'undefined':
-      return { result: formatted, numeric: null, valueType: 'null' }
+    case "Complex":
+      return { result: formatted, numeric: null, valueType: "complex" };
+    case "Unit":
+      return { result: formatted, numeric: null, valueType: "unit" };
+    case "Matrix":
+    case "Array":
+    case "DenseMatrix":
+      return { result: formatted, numeric: null, valueType: "matrix" };
+    case "boolean":
+      return { result: formatted, numeric: null, valueType: "boolean" };
+    case "string":
+      return { result: formatted, numeric: null, valueType: "string" };
+    case "null":
+    case "undefined":
+      return { result: formatted, numeric: null, valueType: "null" };
     default:
-      return { result: formatted, numeric: null, valueType: 'other' }
+      return { result: formatted, numeric: null, valueType: "other" };
   }
 }

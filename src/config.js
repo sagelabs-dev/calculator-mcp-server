@@ -14,22 +14,22 @@
  * @module config
  */
 
-import JSON5 from 'json5'
-import { readFile } from 'fs/promises'
+import JSON5 from "json5";
+import { readFile } from "fs/promises";
 
 /** Code defaults. */
 export const DEFAULTS = Object.freeze({
   port: 3778,
-  host: '127.0.0.1',
-  transport: 'http',
-})
+  host: "127.0.0.1",
+  transport: "http",
+});
 
 /**
  * Transports accepted by createCalculatorMcpServer. 'stdio' is the
  * caller-facing name and maps to SimpleServer's 'cli' connection type
  * (see src/index.js).
  */
-export const TRANSPORTS = Object.freeze(['stdio', 'http', 'sse'])
+export const TRANSPORTS = Object.freeze(["stdio", "http", "sse"]);
 
 /**
  * Validate merged configuration.
@@ -38,16 +38,24 @@ export const TRANSPORTS = Object.freeze(['stdio', 'http', 'sse'])
  * @throws {Error} On invalid port, host, or transport.
  */
 export function validateConfig(config) {
-  if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535) {
-    throw new Error(`invalid port ${config.port} — must be an integer in 1..65535`)
+  if (
+    !Number.isInteger(config.port) ||
+    config.port < 1 ||
+    config.port > 65535
+  ) {
+    throw new Error(
+      `invalid port ${config.port} — must be an integer in 1..65535`,
+    );
   }
-  if (typeof config.host !== 'string' || config.host === '') {
-    throw new Error(`invalid host ${JSON.stringify(config.host)} — must be a non-empty string`)
+  if (typeof config.host !== "string" || config.host === "") {
+    throw new Error(
+      `invalid host ${JSON.stringify(config.host)} — must be a non-empty string`,
+    );
   }
   if (!config.transport || !TRANSPORTS.includes(config.transport)) {
     throw new Error(
-      `invalid transport ${JSON.stringify(config.transport)} — must be one of ${TRANSPORTS.join(', ')}`,
-    )
+      `invalid transport ${JSON.stringify(config.transport)} — must be one of ${TRANSPORTS.join(", ")}`,
+    );
   }
 }
 
@@ -62,36 +70,40 @@ export function validateConfig(config) {
  *   explicitly set by config file or env (entry defaults may not override it).
  */
 export async function loadConfig(env = process.env) {
-  let config = { ...DEFAULTS }
-  let transportExplicit = false
+  let config = { ...DEFAULTS };
+  let transportExplicit = false;
 
   // Layer 2: JSON5 config file (optional).
-  const configPath = env.CALC_MCP_CONFIG || './config.json5'
+  const configPath = env.CALC_MCP_CONFIG || "./config.json5";
   try {
-    const raw = await readFile(configPath, 'utf-8')
-    const parsed = JSON5.parse(raw)
-    if (parsed.transport !== undefined) transportExplicit = true
-    config = { ...config, ...parsed }
+    const raw = await readFile(configPath, "utf-8");
+    const parsed = JSON5.parse(raw);
+    if (parsed.transport !== undefined) transportExplicit = true;
+    config = { ...config, ...parsed };
   } catch {
     // Config file is optional — defaults + env are sufficient.
     if (env.CALC_MCP_DEBUG) {
-      console.info('[CalcMCP] No config file at', configPath, '— using defaults + env')
+      console.info(
+        "[CalcMCP] No config file at",
+        configPath,
+        "— using defaults + env",
+      );
     }
   }
 
   // Layer 3: environment overrides.
   if (env.CALC_MCP_PORT !== undefined) {
-    config.port = parseInt(env.CALC_MCP_PORT, 10)
+    config.port = parseInt(env.CALC_MCP_PORT, 10);
   }
   if (env.CALC_MCP_HOST !== undefined) {
-    config.host = env.CALC_MCP_HOST
+    config.host = env.CALC_MCP_HOST;
   }
   if (env.CALC_MCP_TRANSPORT !== undefined) {
-    config.transport = env.CALC_MCP_TRANSPORT
-    transportExplicit = true
+    config.transport = env.CALC_MCP_TRANSPORT;
+    transportExplicit = true;
   }
 
-  validateConfig(config)
+  validateConfig(config);
 
-  return { ...config, configPath, transportExplicit }
+  return { ...config, configPath, transportExplicit };
 }

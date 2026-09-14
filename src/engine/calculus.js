@@ -13,7 +13,7 @@
  * @module engine/calculus
  */
 
-import { parseAndAudit, getSandboxMath } from './evaluate.js'
+import { parseAndAudit, getSandboxMath } from "./evaluate.js";
 
 /**
  * Validate a calculus variable name.
@@ -25,10 +25,12 @@ import { parseAndAudit, getSandboxMath } from './evaluate.js'
  * @private
  */
 function requireSymbolName(name, role) {
-  if (typeof name !== 'string' || !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
-    throw new Error(`${role} must be a valid variable name (got ${JSON.stringify(name)})`)
+  if (typeof name !== "string" || !/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
+    throw new Error(
+      `${role} must be a valid variable name (got ${JSON.stringify(name)})`,
+    );
   }
-  return name
+  return name;
 }
 
 /**
@@ -44,14 +46,14 @@ function requireSymbolName(name, role) {
  * @private
  */
 function requireVariablePresent(node, scope, variable) {
-  let found = false
+  let found = false;
   node.traverse((n) => {
-    if (n.isSymbolNode && n.name === variable) found = true
-  })
+    if (n.isSymbolNode && n.name === variable) found = true;
+  });
   if (!found && !(scope && Object.hasOwn(scope, variable))) {
     throw new Error(
       `differentiation variable '${variable}' does not appear in the expression or scope`,
-    )
+    );
   }
 }
 
@@ -66,17 +68,17 @@ function requireVariablePresent(node, scope, variable) {
  *   or a differentiation variable absent from expression and scope.
  */
 export function symbolicDerivative(expression, variable, scope) {
-  requireSymbolName(variable, 'differentiation variable')
+  requireSymbolName(variable, "differentiation variable");
   const { math, node, cleanScope } =
-    typeof expression === 'string'
+    typeof expression === "string"
       ? parseAndAudit(expression, scope, { allowFreeSymbols: true })
-      : { math: getSandboxMath(), node: expression, cleanScope: undefined }
+      : { math: getSandboxMath(), node: expression, cleanScope: undefined };
 
-  requireVariablePresent(node, cleanScope, variable)
+  requireVariablePresent(node, cleanScope, variable);
 
-  const derivative = math.derivative(node, variable)
-  const simplified = math.simplify(derivative, cleanScope ?? {})
-  return simplified.toString()
+  const derivative = math.derivative(node, variable);
+  const simplified = math.simplify(derivative, cleanScope ?? {});
+  return simplified.toString();
 }
 
 /**
@@ -90,10 +92,10 @@ export function symbolicDerivative(expression, variable, scope) {
  */
 export function symbolicSimplify(expression, scope) {
   const { math, node, cleanScope } =
-    typeof expression === 'string'
+    typeof expression === "string"
       ? parseAndAudit(expression, scope, { allowFreeSymbols: true })
-      : { math: getSandboxMath(), node: expression, cleanScope: undefined }
+      : { math: getSandboxMath(), node: expression, cleanScope: undefined };
 
-  const simplified = math.simplify(node, cleanScope ?? {})
-  return simplified.toString()
+  const simplified = math.simplify(node, cleanScope ?? {});
+  return simplified.toString();
 }

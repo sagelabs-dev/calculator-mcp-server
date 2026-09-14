@@ -15,7 +15,7 @@
  */
 
 /** Maximum accepted data length (DoS bound for O(n) operations). */
-const MAX_DATA_LENGTH = 1_000_000
+const MAX_DATA_LENGTH = 1_000_000;
 
 /**
  * Validate a numeric data array.
@@ -29,20 +29,22 @@ const MAX_DATA_LENGTH = 1_000_000
  */
 function requireData(data, label) {
   if (!Array.isArray(data)) {
-    throw new Error(`${label} must be an array of numbers`)
+    throw new Error(`${label} must be an array of numbers`);
   }
   if (data.length === 0) {
-    throw new Error(`${label} must not be empty`)
+    throw new Error(`${label} must not be empty`);
   }
   if (data.length > MAX_DATA_LENGTH) {
-    throw new Error(`${label} exceeds maximum length of ${MAX_DATA_LENGTH}`)
+    throw new Error(`${label} exceeds maximum length of ${MAX_DATA_LENGTH}`);
   }
   for (const v of data) {
-    if (typeof v !== 'number' || !Number.isFinite(v)) {
-      throw new Error(`${label} must contain only finite numbers (got ${JSON.stringify(v)})`)
+    if (typeof v !== "number" || !Number.isFinite(v)) {
+      throw new Error(
+        `${label} must contain only finite numbers (got ${JSON.stringify(v)})`,
+      );
     }
   }
-  return data
+  return data;
 }
 
 /**
@@ -56,15 +58,15 @@ function requireData(data, label) {
  * @private
  */
 function requirePairedData(xs, ys, minN, opLabel) {
-  requireData(xs, 'x values')
-  requireData(ys, 'y values')
+  requireData(xs, "x values");
+  requireData(ys, "y values");
   if (xs.length !== ys.length) {
-    throw new Error(`${opLabel} requires x and y arrays of the same length`)
+    throw new Error(`${opLabel} requires x and y arrays of the same length`);
   }
   if (xs.length < minN) {
-    throw new Error(`${opLabel} requires at least ${minN} data points`)
+    throw new Error(`${opLabel} requires at least ${minN} data points`);
   }
-  return { xs, ys, n: xs.length }
+  return { xs, ys, n: xs.length };
 }
 
 /**
@@ -75,9 +77,9 @@ function requirePairedData(xs, ys, minN, opLabel) {
  * @private
  */
 function mean(data) {
-  let sum = 0
-  for (const v of data) sum += v
-  return sum / data.length
+  let sum = 0;
+  for (const v of data) sum += v;
+  return sum / data.length;
 }
 
 /**
@@ -89,11 +91,11 @@ function mean(data) {
  * @private
  */
 function quantileType7(sorted, p) {
-  const h = (sorted.length - 1) * p
-  const lo = Math.floor(h)
-  const hi = Math.ceil(h)
-  if (lo === hi) return sorted[lo]
-  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo])
+  const h = (sorted.length - 1) * p;
+  const lo = Math.floor(h);
+  const hi = Math.ceil(h);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
 }
 
 /**
@@ -109,33 +111,33 @@ function quantileType7(sorted, p) {
  * @throws {Error} On invalid data.
  */
 export function describeData(data) {
-  requireData(data, 'data')
-  const n = data.length
-  const sorted = [...data].sort((a, b) => a - b)
-  const mu = mean(data)
+  requireData(data, "data");
+  const n = data.length;
+  const sorted = [...data].sort((a, b) => a - b);
+  const mu = mean(data);
 
   // Median (interpolated for even n).
-  const median = quantileType7(sorted, 0.5)
+  const median = quantileType7(sorted, 0.5);
 
   // Mode: all values achieving the max frequency; [] when none repeats.
-  const counts = new Map()
-  let maxCount = 1
-  for (const v of data) counts.set(v, (counts.get(v) ?? 0) + 1)
-  for (const c of counts.values()) if (c > maxCount) maxCount = c
-  const mode = []
+  const counts = new Map();
+  let maxCount = 1;
+  for (const v of data) counts.set(v, (counts.get(v) ?? 0) + 1);
+  for (const c of counts.values()) if (c > maxCount) maxCount = c;
+  const mode = [];
   if (maxCount > 1) {
-    for (const [v, c] of counts) if (c === maxCount) mode.push(v)
-    mode.sort((a, b) => a - b)
+    for (const [v, c] of counts) if (c === maxCount) mode.push(v);
+    mode.sort((a, b) => a - b);
   }
 
   // Variances (sample n-1, population n).
-  let ss = 0
-  for (const v of data) ss += (v - mu) * (v - mu)
-  const varianceSample = n > 1 ? ss / (n - 1) : 0
-  const variancePopulation = ss / n
+  let ss = 0;
+  for (const v of data) ss += (v - mu) * (v - mu);
+  const varianceSample = n > 1 ? ss / (n - 1) : 0;
+  const variancePopulation = ss / n;
 
-  const q1 = quantileType7(sorted, 0.25)
-  const q3 = quantileType7(sorted, 0.75)
+  const q1 = quantileType7(sorted, 0.25);
+  const q3 = quantileType7(sorted, 0.75);
 
   return {
     n,
@@ -151,7 +153,7 @@ export function describeData(data) {
     q1,
     q3,
     iqr: q3 - q1,
-  }
+  };
 }
 
 /**
@@ -164,23 +166,25 @@ export function describeData(data) {
  *   series (correlation undefined).
  */
 export function correlation(xs, ys) {
-  const { n } = requirePairedData(xs, ys, 2, 'correlation')
-  const mx = mean(xs)
-  const my = mean(ys)
-  let sxy = 0
-  let sxx = 0
-  let syy = 0
+  const { n } = requirePairedData(xs, ys, 2, "correlation");
+  const mx = mean(xs);
+  const my = mean(ys);
+  let sxy = 0;
+  let sxx = 0;
+  let syy = 0;
   for (let i = 0; i < n; i++) {
-    const dx = xs[i] - mx
-    const dy = ys[i] - my
-    sxy += dx * dy
-    sxx += dx * dx
-    syy += dy * dy
+    const dx = xs[i] - mx;
+    const dy = ys[i] - my;
+    sxy += dx * dy;
+    sxx += dx * dx;
+    syy += dy * dy;
   }
   if (sxx === 0 || syy === 0) {
-    throw new Error('correlation is undefined for a constant series (zero variance)')
+    throw new Error(
+      "correlation is undefined for a constant series (zero variance)",
+    );
   }
-  return sxy / Math.sqrt(sxx * syy)
+  return sxy / Math.sqrt(sxx * syy);
 }
 
 /**
@@ -195,31 +199,33 @@ export function correlation(xs, ys) {
  * @throws {Error} On invalid/mismatched data, < 2 points, or constant x.
  */
 export function linearRegression(xs, ys) {
-  const { n } = requirePairedData(xs, ys, 2, 'linear regression')
-  const mx = mean(xs)
-  const my = mean(ys)
-  let sxy = 0
-  let sxx = 0
+  const { n } = requirePairedData(xs, ys, 2, "linear regression");
+  const mx = mean(xs);
+  const my = mean(ys);
+  let sxy = 0;
+  let sxx = 0;
   for (let i = 0; i < n; i++) {
-    sxy += (xs[i] - mx) * (ys[i] - my)
-    sxx += (xs[i] - mx) * (xs[i] - mx)
+    sxy += (xs[i] - mx) * (ys[i] - my);
+    sxx += (xs[i] - mx) * (xs[i] - mx);
   }
   if (sxx === 0) {
-    throw new Error('linear regression is undefined for constant x (zero variance)')
+    throw new Error(
+      "linear regression is undefined for constant x (zero variance)",
+    );
   }
-  const slope = sxy / sxx
-  const intercept = my - slope * mx
+  const slope = sxy / sxx;
+  const intercept = my - slope * mx;
 
   // Goodness of fit.
-  let ssRes = 0
-  let ssTot = 0
+  let ssRes = 0;
+  let ssTot = 0;
   for (let i = 0; i < n; i++) {
-    const residual = ys[i] - (slope * xs[i] + intercept)
-    ssRes += residual * residual
-    ssTot += (ys[i] - my) * (ys[i] - my)
+    const residual = ys[i] - (slope * xs[i] + intercept);
+    ssRes += residual * residual;
+    ssTot += (ys[i] - my) * (ys[i] - my);
   }
-  const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot
-  const rmse = Math.sqrt(ssRes / n)
+  const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+  const rmse = Math.sqrt(ssRes / n);
 
   return {
     slope,
@@ -228,7 +234,7 @@ export function linearRegression(xs, ys) {
     rmse,
     n,
     predict: (x) => slope * x + intercept,
-  }
+  };
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -237,14 +243,14 @@ export function linearRegression(xs, ys) {
 // ──────────────────────────────────────────────────────────────────────────
 
 /** Lanczos g coefficient for log-gamma (g=7, n=9 coefficients). */
-const LANCZOS_G = 7
+const LANCZOS_G = 7;
 
 /** Lanczos series coefficients (g = 7). */
 const LANCZOS_COEFFS = [
   0.99999999999980993, 676.5203681218851, -1259.1392167224028,
   771.32342877765313, -176.61502916214059, 12.507343278686905,
   -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
-]
+];
 
 /**
  * Natural log of the gamma function (Lanczos approximation).
@@ -257,20 +263,20 @@ const LANCZOS_COEFFS = [
 function logGamma(x) {
   if (x < 0.5) {
     // Reflection formula: Γ(x)·Γ(1−x) = π / sin(πx)
-    return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x)
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
   }
-  const z = x - 1
-  let a = LANCZOS_COEFFS[0]
-  const t = z + LANCZOS_G + 0.5
+  const z = x - 1;
+  let a = LANCZOS_COEFFS[0];
+  const t = z + LANCZOS_G + 0.5;
   for (let i = 1; i < LANCZOS_COEFFS.length; i++) {
-    a += LANCZOS_COEFFS[i] / (z + i)
+    a += LANCZOS_COEFFS[i] / (z + i);
   }
   // Lanczos: Γ(z+1) = √(2π)·t^(z+½)·e^(−t)·A(z) — the exponent is
   // z + ½ (= x − ½), NOT z + g + ½. Verified against Γ(0.5)=√π and
   // Γ(5.5)=52.3428 in the test suite.
   return (
     0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(a)
-  )
+  );
 }
 
 /**
@@ -284,37 +290,37 @@ function logGamma(x) {
  * @private
  */
 function betaCf(a, b, x) {
-  const MAX_IT = 200
-  const EPS = 3e-14
-  const FPMIN = 1e-300
-  const qab = a + b
-  const qap = a + 1
-  const qam = a - 1
-  let c = 1
-  let d = 1 - (qab * x) / qap
-  if (Math.abs(d) < FPMIN) d = FPMIN
-  d = 1 / d
-  let h = d
+  const MAX_IT = 200;
+  const EPS = 3e-14;
+  const FPMIN = 1e-300;
+  const qab = a + b;
+  const qap = a + 1;
+  const qam = a - 1;
+  let c = 1;
+  let d = 1 - (qab * x) / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
   for (let m = 1; m <= MAX_IT; m++) {
-    const m2 = 2 * m
-    let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2))
-    d = 1 + aa * d
-    if (Math.abs(d) < FPMIN) d = FPMIN
-    c = 1 + aa / c
-    if (Math.abs(c) < FPMIN) c = FPMIN
-    d = 1 / d
-    h *= d * c
-    aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2))
-    d = 1 + aa * d
-    if (Math.abs(d) < FPMIN) d = FPMIN
-    c = 1 + aa / c
-    if (Math.abs(c) < FPMIN) c = FPMIN
-    d = 1 / d
-    const del = d * c
-    h *= del
-    if (Math.abs(del - 1) < EPS) break
+    const m2 = 2 * m;
+    let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c;
+    if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    h *= d * c;
+    aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c;
+    if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < EPS) break;
   }
-  return h
+  return h;
 }
 
 /**
@@ -327,17 +333,21 @@ function betaCf(a, b, x) {
  * @private
  */
 function incompleteBeta(a, b, x) {
-  if (x <= 0) return 0
-  if (x >= 1) return 1
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
   const lnBetaAb =
-    logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1 - x)
-  const front = Math.exp(lnBetaAb)
+    logGamma(a + b) -
+    logGamma(a) -
+    logGamma(b) +
+    a * Math.log(x) +
+    b * Math.log(1 - x);
+  const front = Math.exp(lnBetaAb);
   // Symmetry switch for convergence: use I_x(a,b) directly when
   // x < (a+1)/(a+b+2); otherwise 1 − I_{1−x}(b,a).
   if (x < (a + 1) / (a + b + 2)) {
-    return (front * betaCf(a, b, x)) / a
+    return (front * betaCf(a, b, x)) / a;
   }
-  return 1 - (front * betaCf(b, a, 1 - x)) / b
+  return 1 - (front * betaCf(b, a, 1 - x)) / b;
 }
 
 /**
@@ -349,9 +359,9 @@ function incompleteBeta(a, b, x) {
  * @private
  */
 function studentTCdf(t, df) {
-  const x = df / (df + t * t)
-  const p = 0.5 * incompleteBeta(df / 2, 0.5, x)
-  return t > 0 ? 1 - p : p
+  const x = df / (df + t * t);
+  const p = 0.5 * incompleteBeta(df / 2, 0.5, x);
+  return t > 0 ? 1 - p : p;
 }
 
 /**
@@ -365,15 +375,15 @@ function studentTCdf(t, df) {
  * @private
  */
 function studentTQuantile(alpha, df) {
-  let lo = 0
-  let hi = 1000
-  const target = 1 - alpha / 2
+  let lo = 0;
+  let hi = 1000;
+  const target = 1 - alpha / 2;
   for (let i = 0; i < 60; i++) {
-    const mid = (lo + hi) / 2
-    if (studentTCdf(mid, df) < target) lo = mid
-    else hi = mid
+    const mid = (lo + hi) / 2;
+    if (studentTCdf(mid, df) < target) lo = mid;
+    else hi = mid;
   }
-  return (lo + hi) / 2
+  return (lo + hi) / 2;
 }
 
 /**
@@ -388,23 +398,30 @@ function studentTQuantile(alpha, df) {
  * @throws {Error} On invalid data or a confidence level outside (0, 1).
  */
 export function confidenceInterval(data, confidenceLevel = 0.95) {
-  if (typeof confidenceLevel !== 'number' || !Number.isFinite(confidenceLevel) || confidenceLevel <= 0 || confidenceLevel >= 1) {
-    throw new Error(`confidence level must be strictly between 0 and 1 (got ${confidenceLevel})`)
+  if (
+    typeof confidenceLevel !== "number" ||
+    !Number.isFinite(confidenceLevel) ||
+    confidenceLevel <= 0 ||
+    confidenceLevel >= 1
+  ) {
+    throw new Error(
+      `confidence level must be strictly between 0 and 1 (got ${confidenceLevel})`,
+    );
   }
-  requireData(data, 'data')
+  requireData(data, "data");
   if (data.length < 2) {
-    throw new Error('confidence interval requires at least 2 data points')
+    throw new Error("confidence interval requires at least 2 data points");
   }
 
-  const n = data.length
-  const df = n - 1
-  const mu = mean(data)
-  let ss = 0
-  for (const v of data) ss += (v - mu) * (v - mu)
-  const sd = Math.sqrt(ss / df)
-  const se = sd / Math.sqrt(n)
-  const tCritical = studentTQuantile(1 - confidenceLevel, df)
-  const half = tCritical * se
+  const n = data.length;
+  const df = n - 1;
+  const mu = mean(data);
+  let ss = 0;
+  for (const v of data) ss += (v - mu) * (v - mu);
+  const sd = Math.sqrt(ss / df);
+  const se = sd / Math.sqrt(n);
+  const tCritical = studentTQuantile(1 - confidenceLevel, df);
+  const half = tCritical * se;
 
   return {
     mean: mu,
@@ -415,5 +432,5 @@ export function confidenceInterval(data, confidenceLevel = 0.95) {
     sd,
     se,
     n,
-  }
+  };
 }

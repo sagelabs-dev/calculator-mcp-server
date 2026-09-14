@@ -1,0 +1,10 @@
+{
+  // Transport: "stdio" | "http" | "sse"
+  // (bin entry defaults to stdio when nothing specifies one)
+  transport: "http",
+
+  // HTTP/SSE listen address and port.
+  // 127.0.0.1 = loopback only (recommended default).
+  host: "127.0.0.1",
+  port: 3778,
+}

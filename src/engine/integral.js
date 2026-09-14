@@ -21,14 +21,18 @@
  * @module engine/integral
  */
 
-import { parseAndAudit, getSandboxMath, requireBoundSymbols } from './evaluate.js'
+import {
+  parseAndAudit,
+  getSandboxMath,
+  requireBoundSymbols,
+} from "./evaluate.js";
 
 /** Max denominators for exact fraction formatting of coefficients. */
-const FRACTION_DENOMINATOR_CAP = 1000
+const FRACTION_DENOMINATOR_CAP = 1000;
 
 /** Adaptive Simpson: recursion depth cap and base tolerance. */
-const SIMPSON_DEPTH_CAP = 24
-const SIMPSON_TOLERANCE = 1e-10
+const SIMPSON_DEPTH_CAP = 24;
+const SIMPSON_TOLERANCE = 1e-10;
 
 /**
  * Evaluate the audited AST at a point.
@@ -41,9 +45,9 @@ const SIMPSON_TOLERANCE = 1e-10
  * @private
  */
 function evalAstAt(fNode, variable, scope, x) {
-  const localScope = { ...(scope ?? {}) }
-  localScope[variable] = x
-  return fNode.evaluate(localScope)
+  const localScope = { ...(scope ?? {}) };
+  localScope[variable] = x;
+  return fNode.evaluate(localScope);
 }
 
 /**
@@ -59,49 +63,52 @@ function evalAstAt(fNode, variable, scope, x) {
  * @private
  */
 function fitPolynomial(fNode, variable, scope) {
-  const pts = [0, 1, -1, 2, -2]
-  const values = pts.map((x) => evalAstAt(fNode, variable, scope, x))
-  if (!values.every((v) => typeof v === 'number' && Number.isFinite(v))) return null
+  const pts = [0, 1, -1, 2, -2];
+  const values = pts.map((x) => evalAstAt(fNode, variable, scope, x));
+  if (!values.every((v) => typeof v === "number" && Number.isFinite(v)))
+    return null;
 
-  const n = 5
+  const n = 5;
   const A = pts.map((p, i) => {
-    const row = []
-    for (let k = 0; k < n; k++) row.push(Math.pow(p, k))
-    row.push(values[i])
-    return row
-  })
+    const row = [];
+    for (let k = 0; k < n; k++) row.push(Math.pow(p, k));
+    row.push(values[i]);
+    return row;
+  });
 
   for (let col = 0; col < n; col++) {
-    let pivot = col
+    let pivot = col;
     for (let r = col + 1; r < n; r++) {
-      if (Math.abs(A[r][col]) > Math.abs(A[pivot][col])) pivot = r
+      if (Math.abs(A[r][col]) > Math.abs(A[pivot][col])) pivot = r;
     }
-    if (Math.abs(A[pivot][col]) < 1e-14) return null
-    const tmp = A[col]
-    A[col] = A[pivot]
-    A[pivot] = tmp
+    if (Math.abs(A[pivot][col]) < 1e-14) return null;
+    const tmp = A[col];
+    A[col] = A[pivot];
+    A[pivot] = tmp;
     for (let r = 0; r < n; r++) {
-      if (r === col) continue
-      const factor = A[r][col] / A[col][col]
-      for (let k = col; k <= n; k++) A[r][k] -= factor * A[col][k]
-      if (!Number.isFinite(A[r][n])) return null
+      if (r === col) continue;
+      const factor = A[r][col] / A[col][col];
+      for (let k = col; k <= n; k++) A[r][k] -= factor * A[col][k];
+      if (!Number.isFinite(A[r][n])) return null;
     }
   }
-  const coeffs = []
-  for (let k = 0; k < n; k++) coeffs.push(A[k][n] / A[k][k])
+  const coeffs = [];
+  for (let k = 0; k < n; k++) coeffs.push(A[k][n] / A[k][k]);
 
   // Verify at independent points (never among the sample set).
   for (const x of [-0.5, 1.5, 3]) {
-    const actual = evalAstAt(fNode, variable, scope, x)
-    if (typeof actual !== 'number' || !Number.isFinite(actual)) return null
-    let predicted = 0
-    for (let k = 0; k < coeffs.length; k++) predicted += coeffs[k] * Math.pow(x, k)
-    const scale = Math.max(1, Math.abs(actual), Math.abs(predicted))
-    if (Math.abs(actual - predicted) > 1e-9 * scale) return null
+    const actual = evalAstAt(fNode, variable, scope, x);
+    if (typeof actual !== "number" || !Number.isFinite(actual)) return null;
+    let predicted = 0;
+    for (let k = 0; k < coeffs.length; k++)
+      predicted += coeffs[k] * Math.pow(x, k);
+    const scale = Math.max(1, Math.abs(actual), Math.abs(predicted));
+    if (Math.abs(actual - predicted) > 1e-9 * scale) return null;
   }
 
-  while (coeffs.length > 1 && Math.abs(coeffs[coeffs.length - 1]) < 1e-14) coeffs.pop()
-  return coeffs
+  while (coeffs.length > 1 && Math.abs(coeffs[coeffs.length - 1]) < 1e-14)
+    coeffs.pop();
+  return coeffs;
 }
 
 /**
@@ -113,18 +120,22 @@ function fitPolynomial(fNode, variable, scope) {
  * @private
  */
 function formatCoeff(math, c) {
-  if (Number.isInteger(c)) return String(c)
+  if (Number.isInteger(c)) return String(c);
   try {
-    const frac = math.fraction(c)
-    if (frac.d > 0 && frac.d <= FRACTION_DENOMINATOR_CAP && Number(frac) === c) {
-      const sign = frac.s < 0 ? '-' : ''
-      if (frac.d === 1) return `${sign}${frac.n}`
-      return `${sign}${frac.n} / ${frac.d}`
+    const frac = math.fraction(c);
+    if (
+      frac.d > 0 &&
+      frac.d <= FRACTION_DENOMINATOR_CAP &&
+      Number(frac) === c
+    ) {
+      const sign = frac.s < 0 ? "-" : "";
+      if (frac.d === 1) return `${sign}${frac.n}`;
+      return `${sign}${frac.n} / ${frac.d}`;
     }
   } catch {
     // fall through to decimal formatting
   }
-  return math.format(c, { precision: 14 })
+  return math.format(c, { precision: 14 });
 }
 
 /**
@@ -138,26 +149,29 @@ function formatCoeff(math, c) {
  * @private
  */
 function buildAntiderivative(math, coeffs, variable) {
-  const parts = []
+  const parts = [];
   for (let k = coeffs.length - 1; k >= 0; k--) {
-    const c = coeffs[k]
-    if (Math.abs(c) < 1e-14) continue
-    const power = k + 1
-    let coeffStr = formatCoeff(math, c / (k + 1))
+    const c = coeffs[k];
+    if (Math.abs(c) < 1e-14) continue;
+    const power = k + 1;
+    let coeffStr = formatCoeff(math, c / (k + 1));
     // Elide unit coefficients: 'x ^ 3' not '1 * x ^ 3'; '-x ^ 2' not
     // '-1 * x ^ 2'. Non-unit coefficients keep the explicit form.
-    let term
-    if (coeffStr === '1') {
-      term = power === 1 ? variable : `${variable} ^ ${power}`
-    } else if (coeffStr === '-1') {
-      term = power === 1 ? `-${variable}` : `-${variable} ^ ${power}`
+    let term;
+    if (coeffStr === "1") {
+      term = power === 1 ? variable : `${variable} ^ ${power}`;
+    } else if (coeffStr === "-1") {
+      term = power === 1 ? `-${variable}` : `-${variable} ^ ${power}`;
     } else {
-      term = power === 1 ? `${coeffStr} * ${variable}` : `${coeffStr} * ${variable} ^ ${power}`
+      term =
+        power === 1
+          ? `${coeffStr} * ${variable}`
+          : `${coeffStr} * ${variable} ^ ${power}`;
     }
-    parts.push(term)
+    parts.push(term);
   }
-  if (parts.length === 0) return '0'
-  return parts.join(' + ').replace(/\+ -/g, '- ')
+  if (parts.length === 0) return "0";
+  return parts.join(" + ").replace(/\+ -/g, "- ");
 }
 
 /**
@@ -174,19 +188,19 @@ function buildAntiderivative(math, coeffs, variable) {
  */
 function verifyAntiderivative(math, fNode, FStr, variable, scope) {
   try {
-    const FNode = math.parse(FStr)
-    const dF = math.derivative(FNode, variable)
-    const difference = new math.OperatorNode('-', 'subtract', [dF, fNode])
+    const FNode = math.parse(FStr);
+    const dF = math.derivative(FNode, variable);
+    const difference = new math.OperatorNode("-", "subtract", [dF, fNode]);
     for (const p of [0.1, 0.7, 1.3, 2.1, -0.9]) {
-      const localScope = { ...(scope ?? {}) }
-      localScope[variable] = p
-      const d = difference.evaluate(localScope)
-      if (typeof d !== 'number' || !Number.isFinite(d)) return false
-      if (Math.abs(d) > 1e-9) return false
+      const localScope = { ...(scope ?? {}) };
+      localScope[variable] = p;
+      const d = difference.evaluate(localScope);
+      if (typeof d !== "number" || !Number.isFinite(d)) return false;
+      if (Math.abs(d) > 1e-9) return false;
     }
-    return true
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -201,38 +215,43 @@ function verifyAntiderivative(math, fNode, FStr, variable, scope) {
  *   with scope-resolvable coefficients, or on security violations.
  */
 export function symbolicAntiderivative(expression, variable, scope) {
-  if (typeof variable !== 'string' || !/^[A-Za-z][A-Za-z0-9_]*$/.test(variable)) {
+  if (
+    typeof variable !== "string" ||
+    !/^[A-Za-z][A-Za-z0-9_]*$/.test(variable)
+  ) {
     throw new Error(
       `integration variable must be a valid variable name (got ${JSON.stringify(variable)})`,
-    )
+    );
   }
-  let math
-  let node
-  let cleanScope
-  if (typeof expression === 'string') {
-    const parsed = parseAndAudit(expression, scope, { allowFreeSymbols: true })
-    math = parsed.math
-    node = parsed.node
-    cleanScope = parsed.cleanScope
+  let math;
+  let node;
+  let cleanScope;
+  if (typeof expression === "string") {
+    const parsed = parseAndAudit(expression, scope, { allowFreeSymbols: true });
+    math = parsed.math;
+    node = parsed.node;
+    cleanScope = parsed.cleanScope;
   } else {
-    math = getSandboxMath()
-    node = expression
-    cleanScope = undefined
+    math = getSandboxMath();
+    node = expression;
+    cleanScope = undefined;
   }
-  requireBoundSymbols(math, node, cleanScope, variable)
+  requireBoundSymbols(math, node, cleanScope, variable);
 
-  const coeffs = fitPolynomial(node, variable, cleanScope)
+  const coeffs = fitPolynomial(node, variable, cleanScope);
   if (!coeffs) {
     throw new Error(
-      'symbolic antiderivative requires a polynomial integrand (degree ≤ 4) — use integrate() for numeric definite integrals',
-    )
+      "symbolic antiderivative requires a polynomial integrand (degree ≤ 4) — use integrate() for numeric definite integrals",
+    );
   }
 
-  const F = buildAntiderivative(math, coeffs, variable)
+  const F = buildAntiderivative(math, coeffs, variable);
   if (!verifyAntiderivative(math, node, F, variable, cleanScope)) {
-    throw new Error('internal error: antiderivative failed self-check (F-prime differs from f)')
+    throw new Error(
+      "internal error: antiderivative failed self-check (F-prime differs from f)",
+    );
   }
-  return F
+  return F;
 }
 
 /**
@@ -248,7 +267,7 @@ export function symbolicAntiderivative(expression, variable, scope) {
  * @private
  */
 function simpsonPanel(evalF, a, b, fa, fb, fm) {
-  return ((b - a) / 6) * (fa + 4 * fm + fb)
+  return ((b - a) / 6) * (fa + 4 * fm + fb);
 }
 
 /**
@@ -268,25 +287,28 @@ function simpsonPanel(evalF, a, b, fa, fb, fm) {
  * @private
  */
 function simpsonRecurse(evalF, a, b, fa, fb, whole, tol, depth) {
-  const m = (a + b) / 2
-  const flm = evalF((a + m) / 2)
-  const frm = evalF((m + b) / 2)
+  const m = (a + b) / 2;
+  const flm = evalF((a + m) / 2);
+  const frm = evalF((m + b) / 2);
   if (!Number.isFinite(flm) || !Number.isFinite(frm)) {
-    throw new Error('integrand is not finite inside the integration interval')
+    throw new Error("integrand is not finite inside the integration interval");
   }
-  const fm = evalF(m)
-  const left = simpsonPanel(evalF, a, m, fa, fm, flm)
-  const right = simpsonPanel(evalF, m, b, fm, fb, frm)
-  const delta = left + right - whole
+  const fm = evalF(m);
+  const left = simpsonPanel(evalF, a, m, fa, fm, flm);
+  const right = simpsonPanel(evalF, m, b, fm, fb, frm);
+  const delta = left + right - whole;
   if (depth <= 0 || Math.abs(delta) <= 15 * tol) {
-    return { value: left + right + delta / 15, errorEstimate: Math.abs(delta) / 15 }
+    return {
+      value: left + right + delta / 15,
+      errorEstimate: Math.abs(delta) / 15,
+    };
   }
-  const l = simpsonRecurse(evalF, a, m, fa, fm, left, tol / 2, depth - 1)
-  const r = simpsonRecurse(evalF, m, b, fm, fb, right, tol / 2, depth - 1)
+  const l = simpsonRecurse(evalF, a, m, fa, fm, left, tol / 2, depth - 1);
+  const r = simpsonRecurse(evalF, m, b, fm, fb, right, tol / 2, depth - 1);
   return {
     value: l.value + r.value,
     errorEstimate: Math.hypot(l.errorEstimate, r.errorEstimate),
-  }
+  };
 }
 
 /**
@@ -304,20 +326,29 @@ function simpsonRecurse(evalF, a, b, fa, fb, whole, tol, depth) {
  */
 function adaptiveSimpson(fNode, variable, scope, a, b) {
   const evalF = (x) => {
-    const v = evalAstAt(fNode, variable, scope, x)
-    return typeof v === 'number' ? v : NaN
-  }
-  const fa = evalF(a)
-  const fb = evalF(b)
+    const v = evalAstAt(fNode, variable, scope, x);
+    return typeof v === "number" ? v : NaN;
+  };
+  const fa = evalF(a);
+  const fb = evalF(b);
   if (!Number.isFinite(fa) || !Number.isFinite(fb)) {
-    throw new Error('integrand is not finite at the integration bounds')
+    throw new Error("integrand is not finite at the integration bounds");
   }
-  const fm = evalF((a + b) / 2)
+  const fm = evalF((a + b) / 2);
   if (!Number.isFinite(fm)) {
-    throw new Error('integrand is not finite at the interval midpoint')
+    throw new Error("integrand is not finite at the interval midpoint");
   }
-  const whole = simpsonPanel(evalF, a, b, fa, fb, fm)
-  return simpsonRecurse(evalF, a, b, fa, fb, whole, SIMPSON_TOLERANCE, SIMPSON_DEPTH_CAP)
+  const whole = simpsonPanel(evalF, a, b, fa, fb, fm);
+  return simpsonRecurse(
+    evalF,
+    a,
+    b,
+    fa,
+    fb,
+    whole,
+    SIMPSON_TOLERANCE,
+    SIMPSON_DEPTH_CAP,
+  );
 }
 
 /**
@@ -332,20 +363,26 @@ function adaptiveSimpson(fNode, variable, scope, a, b) {
  * @throws {Error} Same as integrate(); always takes the numeric path.
  */
 export function integrateNumeric(expression, variable, a, b, scope) {
-  let node
-  let cleanScope
-  if (typeof expression === 'string') {
-    const parsed = parseAndAudit(expression, scope, { allowFreeSymbols: true })
-    node = parsed.node
-    cleanScope = parsed.cleanScope
+  let node;
+  let cleanScope;
+  if (typeof expression === "string") {
+    const parsed = parseAndAudit(expression, scope, { allowFreeSymbols: true });
+    node = parsed.node;
+    cleanScope = parsed.cleanScope;
   } else {
-    node = expression
-    cleanScope = undefined
+    node = expression;
+    cleanScope = undefined;
   }
-  const math = getSandboxMath()
-  requireBoundSymbols(math, node, cleanScope, variable)
-  const { value, errorEstimate } = adaptiveSimpson(node, variable, cleanScope, a, b)
-  return { method: 'numeric', value, errorEstimate }
+  const math = getSandboxMath();
+  requireBoundSymbols(math, node, cleanScope, variable);
+  const { value, errorEstimate } = adaptiveSimpson(
+    node,
+    variable,
+    cleanScope,
+    a,
+    b,
+  );
+  return { method: "numeric", value, errorEstimate };
 }
 
 /**
@@ -367,67 +404,76 @@ export function integrateNumeric(expression, variable, a, b, scope) {
 export function integrate(expression, variable, a, b, scope) {
   // Bounds validation before any parsing (fail fast on caller errors).
   for (const [label, bound] of [
-    ['lower', a],
-    ['upper', b],
+    ["lower", a],
+    ["upper", b],
   ]) {
-    if (typeof bound !== 'number' || !Number.isFinite(bound)) {
-      throw new Error(`${label} bound must be a finite number (got ${bound})`)
+    if (typeof bound !== "number" || !Number.isFinite(bound)) {
+      throw new Error(`${label} bound must be a finite number (got ${bound})`);
     }
   }
-  if (typeof variable !== 'string' || !/^[A-Za-z][A-Za-z0-9_]*$/.test(variable)) {
+  if (
+    typeof variable !== "string" ||
+    !/^[A-Za-z][A-Za-z0-9_]*$/.test(variable)
+  ) {
     throw new Error(
       `integration variable must be a valid variable name (got ${JSON.stringify(variable)})`,
-    )
+    );
   }
 
-  let math
-  let node
-  let cleanScope
-  if (typeof expression === 'string') {
-    const parsed = parseAndAudit(expression, scope, { allowFreeSymbols: true })
-    math = parsed.math
-    node = parsed.node
-    cleanScope = parsed.cleanScope
+  let math;
+  let node;
+  let cleanScope;
+  if (typeof expression === "string") {
+    const parsed = parseAndAudit(expression, scope, { allowFreeSymbols: true });
+    math = parsed.math;
+    node = parsed.node;
+    cleanScope = parsed.cleanScope;
   } else {
-    math = getSandboxMath()
-    node = expression
-    cleanScope = undefined
+    math = getSandboxMath();
+    node = expression;
+    cleanScope = undefined;
   }
   // Equal bounds: the integral is exactly 0 for any integrable f.
-  if (a === b) return { method: 'polynomial', value: 0 }
+  if (a === b) return { method: "polynomial", value: 0 };
 
-  requireBoundSymbols(math, node, cleanScope, variable)
+  requireBoundSymbols(math, node, cleanScope, variable);
 
   // Constant integrand (variable absent): c·(b − a). Evaluated WITHOUT
   // the variable bound — 'y^2' w.r.t. 'x' is a valid constant integrand.
-  let appears = false
+  let appears = false;
   node.traverse((n) => {
-    if (n.isSymbolNode && n.name === variable) appears = true
-  })
+    if (n.isSymbolNode && n.name === variable) appears = true;
+  });
   if (!appears) {
-    const c = node.evaluate({ ...(cleanScope ?? {}) })
-    if (typeof c !== 'number' || !Number.isFinite(c)) {
+    const c = node.evaluate({ ...(cleanScope ?? {}) });
+    if (typeof c !== "number" || !Number.isFinite(c)) {
       throw new Error(
         `variable '${variable}' does not appear in the integrand and the integrand is not a finite constant`,
-      )
+      );
     }
-    return { method: 'polynomial', value: c * (b - a) }
+    return { method: "polynomial", value: c * (b - a) };
   }
 
   // Polynomial path: exact F(b) − F(a) with self-check.
-  const coeffs = fitPolynomial(node, variable, cleanScope)
+  const coeffs = fitPolynomial(node, variable, cleanScope);
   if (coeffs) {
-    const F = buildAntiderivative(math, coeffs, variable)
+    const F = buildAntiderivative(math, coeffs, variable);
     if (verifyAntiderivative(math, node, F, variable, cleanScope)) {
-      const FNode = math.parse(F)
-      const Fa = evalAstAt(FNode, variable, cleanScope, a)
-      const Fb = evalAstAt(FNode, variable, cleanScope, b)
-      const value = Fb - Fa
-      if (Number.isFinite(value)) return { method: 'polynomial', value }
+      const FNode = math.parse(F);
+      const Fa = evalAstAt(FNode, variable, cleanScope, a);
+      const Fb = evalAstAt(FNode, variable, cleanScope, b);
+      const value = Fb - Fa;
+      if (Number.isFinite(value)) return { method: "polynomial", value };
     }
   }
 
   // Numeric path: adaptive Simpson.
-  const { value, errorEstimate } = adaptiveSimpson(node, variable, cleanScope, a, b)
-  return { method: 'numeric', value, errorEstimate }
+  const { value, errorEstimate } = adaptiveSimpson(
+    node,
+    variable,
+    cleanScope,
+    a,
+    b,
+  );
+  return { method: "numeric", value, errorEstimate };
 }
