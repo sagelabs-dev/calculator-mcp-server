@@ -12,7 +12,6 @@
  *      (diagnostics go to stderr; stdout is the wire)
  */
 
-import { createRequire } from 'node:module'
 import { describe, it, expect, afterAll } from 'vitest'
 import { spawn } from 'child_process'
 import { createInterface } from 'readline'
