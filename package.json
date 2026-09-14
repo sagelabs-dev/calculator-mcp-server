@@ -1,6 +1,6 @@
 {
   "name": "@guan-tends/calculator-mcp-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Scientific calculator MCP tool server - safe expression evaluation, symbolic calculus (derivative, simplify, solve, integral), statistics, and matrix operations, via the Model Context Protocol.",
   "type": "module",
   "main": "src/mcp-server.js",
