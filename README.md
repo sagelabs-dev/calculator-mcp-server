@@ -133,3 +133,7 @@ npm run format:check
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Crafted with ❤️ by [Sage Labs](https://sagelabs.dev)
