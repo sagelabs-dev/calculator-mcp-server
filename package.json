@@ -51,7 +51,7 @@
     "CHANGELOG.md"
   ],
   "dependencies": {
-    "@sagelabs/mcp-ai": "^1.6.7-guan.0",
+    "@sagelabs/mcp-ai": "^1.6.9-guan.0",
     "json5": "^2.2.3",
     "mathjs": "^15.2.0",
     "zod": "^3.24.0"
