@@ -67,6 +67,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guan-tends/calculator-mcp-server.git"
+    "url": "git+https://github.com/sagelabs-dev/calculator-mcp-server.git"
   }
 }
