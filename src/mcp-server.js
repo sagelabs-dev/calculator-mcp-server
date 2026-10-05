@@ -19,7 +19,7 @@
  */
 
 import { createRequire } from "node:module";
-import { createSimpleServer } from "@guan-tends/mcp-ai/simple-server/index.js";
+import { createSimpleServer } from "@sagelabs/mcp-ai/simple-server/index.js";
 import { z } from "zod";
 import {
   evaluateExpression,

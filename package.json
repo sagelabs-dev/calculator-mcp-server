@@ -1,5 +1,5 @@
 {
-  "name": "@guan-tends/calculator-mcp-server",
+  "name": "@sagelabs/calculator-mcp-server",
   "version": "1.0.0",
   "description": "Scientific calculator MCP tool server - safe expression evaluation, symbolic calculus (derivative, simplify, solve, integral), statistics, and matrix operations, via the Model Context Protocol.",
   "type": "module",
@@ -51,7 +51,7 @@
     "CHANGELOG.md"
   ],
   "dependencies": {
-    "@guan-tends/mcp-ai": "^1.6.7-guan.0",
+    "@sagelabs/mcp-ai": "^1.6.7-guan.0",
     "json5": "^2.2.3",
     "mathjs": "^15.2.0",
     "zod": "^3.24.0"
