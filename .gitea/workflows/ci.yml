@@ -1,0 +1,31 @@
+name: Gitea CI
+# Gitea-native CI. Runner labels: self-hosted,linux,docker.
+# Clones over the internal gitea:3000 hostname (no LAN IP in this file).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  ci:
+    runs-on: self-hosted
+    container:
+      image: node:22
+    steps:
+      - name: Checkout
+        run: |
+          git config --global --add safe.directory '*'
+          git clone --depth 1 "http://guan:${{ github.token }}@gitea:3000/guan/calculator-mcp-server.git" .repo
+      - name: Install
+        working-directory: .repo
+        run: npm ci
+      - name: Lint
+        working-directory: .repo
+        run: npm run lint
+      - name: Format check
+        working-directory: .repo
+        run: npm run format:check
+      - name: Test
+        working-directory: .repo
+        run: npm test
